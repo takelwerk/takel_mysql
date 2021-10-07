@@ -1,0 +1,54 @@
+---
+- name: "(secure) [{{ takel_mysql_site }}] update mariadb root password"
+  command: >-
+    sudo mysql --user root --password={{ takel_mysql_root_password }}
+    --batch --skip-column-names --execute "{{ item }}"
+  loop:
+    - |
+      ALTER USER 'root'@'localhost'
+      IDENTIFIED BY '{{ takel_mysql_root_password }}';
+      FLUSH PRIVILEGES;
+  no_log: true
+  changed_when: false
+
+# Only works when run as user "root" (not as user "vagrant")
+# So this works for a docker target but not for virtualbox one
+# - name: (secure) update mariadb root password for root accounts
+#   mysql_user:
+#     name: root
+#     password: "{{ takel_mysql_root_password }}"
+#     host_all: true
+#     update_password: on_create
+#   no_log: false
+
+- name: "(secure) [{{ takel_mysql_site }}] copy root password credentials"
+  template:
+    src: root_my_cnf.j2
+    dest: /root/.my.cnf
+    owner: root
+    group: root
+    mode: 0600
+  no_log: true
+
+- name: "(secure) [{{ takel_mysql_site }}] disallow root login remotely"
+  command: 'mysql --batch --skip-column-names --execute="{{ item }}"'
+  loop:
+    - |
+      DELETE FROM mysql.user
+      WHERE User='root'
+      AND Host NOT IN ('localhost')
+  no_log: true
+  changed_when: false
+
+- name: "(secure) [{{ takel_mysql_site }}] remove anonymous user account"
+  mysql_user:
+    name: ''
+    host_all: true
+    state: absent
+  no_log: true
+
+- name: "(secure) [{{ takel_mysql_site }}] remove mysql test database"
+  mysql_db:
+    name: test
+    state: absent
+  no_log: true

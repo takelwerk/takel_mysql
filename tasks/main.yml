@@ -1,0 +1,51 @@
+---
+- name: "(main) [{{ takel_mysql_site }}] check first run"
+  stat:
+    path: /root/.my.cnf
+  register: root_my_cnf
+
+- name: "(main) [{{ takel_mysql_site }}] include install tasks"
+  import_tasks: install.yml
+  when: not root_my_cnf.stat.exists
+  tags:
+    - takel
+    - takel_mysql
+    - takel_mysql_install
+
+- name: "(main) [{{ takel_mysql_site }}] include configure tasks"
+  import_tasks: configure.yml
+  when: not root_my_cnf.stat.exists
+  tags:
+    - takel
+    - takel_mysql
+    - takel_mysql_configure
+
+- name: "(main) [{{ takel_mysql_site }}] include secure tasks"
+  import_tasks: secure.yml
+  when: not root_my_cnf.stat.exists
+  tags:
+    - takel
+    - takel_mysql
+    - takel_mysql_secure
+
+- name: "(main) [{{ takel_mysql_site }}] include flush tasks"
+  include_tasks: flush.yml
+  when: not root_my_cnf.stat.exists
+  tags:
+    - takel
+    - takel_mysql
+    - takel_mysql_flush
+
+- name: "(main) [{{ takel_mysql_site }}] include users tasks"
+  include_tasks: users.yml
+  tags:
+    - takel
+    - takel_mysql
+    - takel_mysql_user
+
+- name: "(main) [{{ takel_mysql_site }}] include databases tasks"
+  import_tasks: databases.yml
+  tags:
+    - takel
+    - takel_mysql
+    - takel_mysql_databases
